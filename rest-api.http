@@ -1,0 +1,18 @@
+### Challenge request test
+POST https://emojibot.aws.ctrlok.dev/v1/slack
+Content-Type: application/json
+
+{
+  "token": "token",
+  "challenge": "challenge",
+  "type": "url_verification"
+}
+
+### Bad request test
+POST https://emojibot.aws.ctrlok.dev/v1/slack
+Content-Type: application/json
+
+"message"
+
+###
+
