@@ -22,7 +22,7 @@ EOF
 }
 
 # Allow lambda to write logs
-resource "aws_iam_role_policy" "slackConnector" {
+resource "aws_iam_role_policy" "slackConnectorLogs" {
   name = "slackConnector_cloudwatch_access"
   role = aws_iam_role.slackConnector.id
 
@@ -38,6 +38,33 @@ resource "aws_iam_role_policy" "slackConnector" {
       ],
       "Effect": "Allow",
       "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "slackConnectorSecrets" {
+  name = "slackConnector_secrets_access"
+  role = aws_iam_role.slackConnector.id
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": [
+            "ssm:GetParameter*"
+        ],
+        "Resource": "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/ukrops/emojiBot/*"
+    },
+    {
+        "Effect": "Allow",
+        "Action": [
+            "kms:Decrypt"
+        ],
+        "Resource": "${aws_kms_key.emojiBot_slackApi.arn}"
     }
   ]
 }

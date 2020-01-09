@@ -7,6 +7,7 @@ resource "aws_api_gateway_domain_name" "emojibot" {
   }
 }
 
+
 // DNS record for emojiBot
 resource "aws_route53_record" "emojibot" {
   name    = aws_api_gateway_domain_name.emojibot.domain_name
