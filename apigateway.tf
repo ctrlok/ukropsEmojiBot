@@ -1,5 +1,5 @@
 resource "aws_api_gateway_rest_api" "emojiBot" {
-  name = "emojiBot"
+  name = "emojiBot" //TODO: change to a workspace-related name in develop first
   endpoint_configuration {
     types = ["REGIONAL"]
   }

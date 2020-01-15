@@ -1,5 +1,5 @@
 resource "aws_iam_role" "slackConnector" {
-  name = "ukrops_emojiBot_slackConnector"
+  name = "ukrops_emojiBot_slackConnector" // TODO: rename to workspace related
 
   assume_role_policy = <<EOF
 {
@@ -23,7 +23,7 @@ EOF
 
 # Allow lambda to write logs
 resource "aws_iam_role_policy" "slackConnectorLogs" {
-  name = "slackConnector_cloudwatch_access"
+  name = "slackConnector_cloudwatch_access" // TODO: rename to workspace related
   role = aws_iam_role.slackConnector.id
 
   policy = <<EOF
@@ -45,7 +45,7 @@ EOF
 }
 
 resource "aws_iam_role_policy" "slackConnectorSecrets" {
-  name = "slackConnector_secrets_access"
+  name = "slackConnector_secrets_access" // TODO: rename to workspace related
   role = aws_iam_role.slackConnector.id
 
   policy = <<EOF

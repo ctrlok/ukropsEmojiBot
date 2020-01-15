@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_log_group" "slackConnector" {
-  name              = "/aws/lambda/ukrops/emojiBot"
+  name              = "/aws/lambda/ukrops/emojiBot" // TODO: rename to workspace related
   retention_in_days = 14
 }
 

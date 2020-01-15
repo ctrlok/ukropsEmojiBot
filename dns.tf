@@ -1,5 +1,5 @@
 resource "aws_api_gateway_domain_name" "emojibot" {
-  domain_name              = "emojibot.aws.ctrlok.dev"
+  domain_name              = local.current.dns_name
   regional_certificate_arn = aws_acm_certificate_validation.emojiBot.certificate_arn
 
   endpoint_configuration {
