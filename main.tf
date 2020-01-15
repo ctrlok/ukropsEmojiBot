@@ -2,7 +2,7 @@ terraform {
   backend "remote" {
     organization = "ukrops"
     workspaces {
-      name = "bestbot"
+      prefix = "emojibot-"
     }
   }
 }
