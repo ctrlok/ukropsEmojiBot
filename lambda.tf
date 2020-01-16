@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_log_group" "slackConnector" {
-  name              = "/aws/lambda/ukrops/emojiBot-${terraform.workspace}"
+  name              = "/aws/lambda/ukrops_slackConnector-${terraform.workspace}"
   retention_in_days = 14
 }
 

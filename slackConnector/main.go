@@ -91,7 +91,7 @@ func HandleEventTest(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 					slack.MsgOptionBlocks(headerSection),
 					slack.MsgOptionAttachments(slack.Attachment{Blocks: []slack.Block{bodySection}}))
 				if err != nil {
-					log.Errorf("Problem with senging a message: %s", err)
+					log.Errorf("Problem with senging a message: %s.", err)
 				}
 			}
 		}

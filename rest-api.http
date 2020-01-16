@@ -1,5 +1,5 @@
 ### Challenge request test
-POST https://emojibot.aws.ctrlok.dev/v1/slack
+POST https://emojibot-production.aws.ctrlok.dev/v1/slack
 Content-Type: application/json
 
 {
