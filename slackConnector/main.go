@@ -5,63 +5,9 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/nlopes/slack"
+	log "github.com/sirupsen/logrus"
 )
-
-// Variables to share between sessions
-var (
-	legacyClient *slack.Client
-	client       *slack.Client
-	sess         *session.Session
-)
-
-func init() {
-	sess, _ = session.NewSessionWithOptions(session.Options{
-		Config:            aws.Config{Region: aws.String("us-east-1")},
-		SharedConfigState: session.SharedConfigEnable,
-	})
-	config := config{
-		slackApiKeyName:      "/ukrops/emojiBot/slackAPI",
-		slackApiKeyLeacyName: "/ukrops/emojiBot/slackAPILegacy",
-	}
-	err := config.GetSecrets()
-	if err != nil {
-		panic(err)
-	}
-	client = slack.New(config.slackApiKey)
-	legacyClient = slack.New(config.slackApiKeyLeacy)
-}
-
-type config struct {
-	slackApiKey          string
-	slackApiKeyName      string
-	slackApiKeyLeacy     string
-	slackApiKeyLeacyName string
-}
-
-func (c *config) GetSecrets() error {
-	ps := ssm.New(sess)
-	output, err := ps.GetParameter(&ssm.GetParameterInput{
-		Name:           aws.String(c.slackApiKeyName),
-		WithDecryption: aws.Bool(true),
-	})
-	if err != nil {
-		return err
-	}
-	c.slackApiKey = *output.Parameter.Value
-	output, err = ps.GetParameter(&ssm.GetParameterInput{
-		Name:           aws.String(c.slackApiKeyLeacyName),
-		WithDecryption: aws.Bool(true),
-	})
-	if err != nil {
-		return err
-	}
-	c.slackApiKeyLeacy = *output.Parameter.Value
-	return nil
-}
 
 func main() {
 	lambda.Start(HandleEventTest)
@@ -73,48 +19,66 @@ func HandleEventTest(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		Body:       "OK",
 	}
 
+	log.WithFields(log.Fields{"body": request.Body}).Debug("Start processing a body")
 	lambdaEvent, err := parseBody(request.Body)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return response, err
 	}
+	log.WithFields(log.Fields{"recievedEvent": lambdaEvent}).Debug("Finish processing a body")
 
-	// is this request a slack challenge?
+	log.Debug("Check is this request is a challenge?")
 	if response, isChallenge := checkChallenge(lambdaEvent); isChallenge {
+		log.Debug("Yep, this is a challenge, return 220 ok then")
 		return response, nil
 	}
+	log.Debug("Nope, this is not a challenge. Processing then.")
 
 	// If this request is not a challenge - proceed as reaction request
-	if lambdaEvent.Event.Type == "reaction_added" && lambdaEvent.Event.Reaction == "to_best" {
+	log.WithFields(log.Fields{"reaction": lambdaEvent.Event.Reaction}).Debug("Start checking a reaction")
+	if lambdaEvent.Event.Type == "reaction_added" && lambdaEvent.Event.Reaction == config.BestEmojiName {
+		log.Debug("Yep, this is reaction we need to react. Will get all reactions for the message")
 		reactions, err := client.GetReactions(slack.ItemRef{
 			Channel:   lambdaEvent.Event.Item.Channel,
 			Timestamp: lambdaEvent.Event.Item.Timestamp,
 		}, slack.NewGetReactionsParameters())
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			return response, err
 		}
+		log.WithFields(log.Fields{"reactions": reactions}).Debugf("We got reactions for the message")
 
+		log.Debug("Let's find a reaction we need...")
 		for _, reaction := range reactions {
-			if reaction.Name == "to_best" && reaction.Count == 1 {
-				permalink, _ := client.GetPermalink(&slack.PermalinkParameters{
+			if reaction.Name == config.BestEmojiName && reaction.Count == 1 {
+
+				log.Debug("Lets create a permalink to the message we will quote")
+				permalink, err := client.GetPermalink(&slack.PermalinkParameters{
 					Channel: lambdaEvent.Event.Item.Channel,
 					Ts:      lambdaEvent.Event.Item.Timestamp,
 				})
+				if err != nil {
+					log.Error(err)
+					return response, err
+				}
+				log.Debugf("Permalink created: %s", permalink)
 
+				log.Debugf("Then we need to find a message in history, to copy a text from.")
 				channelHistory, err := legacyClient.GetChannelHistory(lambdaEvent.Event.Item.Channel, slack.HistoryParameters{
 					Latest:    lambdaEvent.Event.Item.Timestamp,
 					Inclusive: true,
 					Count:     1,
 				})
 				if err != nil {
-					fmt.Println(err)
+					log.Error(err)
 				}
 				if len(channelHistory.Messages) != 1 {
-					fmt.Printf("Not a single message returned from a search: %v", channelHistory)
+					log.Errorf("Not a single message returned from a search: %v", channelHistory)
 					return response, nil
 				}
-				headerString := fmt.Sprintf("<@%s> написал, _(а <@%s> добавил в лучшее):_", lambdaEvent.Event.ItemUser, lambdaEvent.Event.User)
+
+				log.Debug("So... We got a single message from a history. Let's process it.")
+				headerString := fmt.Sprintf("<@%s> написал, _(а <@%s> добавил в лучшее)_: ", lambdaEvent.Event.ItemUser, lambdaEvent.Event.User)
 				headerTextObject := slack.NewTextBlockObject("mrkdwn", headerString, false, false)
 				headerSection := slack.NewSectionBlock(headerTextObject, nil, nil)
 
@@ -122,9 +86,13 @@ func HandleEventTest(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 				bodyText := slack.NewTextBlockObject("mrkdwn", bodyString, false, false)
 				bodySection := slack.NewSectionBlock(bodyText, nil, nil)
 
-				_, _, err = client.PostMessage("C4ZBDES04",
+				log.WithFields(log.Fields{"header": headerSection, "body": bodySection}).Debug("Message created and ready.")
+				_, _, err = client.PostMessage(config.BestChannelId,
 					slack.MsgOptionBlocks(headerSection),
 					slack.MsgOptionAttachments(slack.Attachment{Blocks: []slack.Block{bodySection}}))
+				if err != nil {
+					log.Errorf("Problem with senging a message: %s.", err)
+				}
 			}
 		}
 	}

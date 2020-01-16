@@ -1,5 +1,5 @@
 resource "aws_iam_role" "slackConnector" {
-  name = "ukrops_emojiBot_slackConnector"
+  name = "ukrops_emojiBot_slackConnector-${terraform.workspace}"
 
   assume_role_policy = <<EOF
 {
@@ -23,7 +23,7 @@ EOF
 
 # Allow lambda to write logs
 resource "aws_iam_role_policy" "slackConnectorLogs" {
-  name = "slackConnector_cloudwatch_access"
+  name = "slackConnector_cloudwatch_access-${terraform.workspace}"
   role = aws_iam_role.slackConnector.id
 
   policy = <<EOF
@@ -45,7 +45,7 @@ EOF
 }
 
 resource "aws_iam_role_policy" "slackConnectorSecrets" {
-  name = "slackConnector_secrets_access"
+  name = "slackConnector_secrets_access-${terraform.workspace}"
   role = aws_iam_role.slackConnector.id
 
   policy = <<EOF
@@ -57,7 +57,7 @@ resource "aws_iam_role_policy" "slackConnectorSecrets" {
         "Action": [
             "ssm:GetParameter*"
         ],
-        "Resource": "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/ukrops/emojiBot/*"
+        "Resource": "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/ukrops/emojiBot/${terraform.workspace}/*"
     },
     {
         "Effect": "Allow",
