@@ -12,7 +12,7 @@ resource "aws_lambda_function" "slackConnector" {
   timeout          = 600
   runtime          = "go1.x"
   environment {
-    variables {
+    variables = {
       EMOJIBOT_BEST_CHANNEL_ID               = local.current.best_channel_id
       EMOJIBOT_SSM_SLACK_API_KEY_PATH        = local.ssm.slack_api_key_path
       EMOJIBOT_SSM_SLACK_API_LEGACY_KEY_PATH = local.ssm.legacy_slack_api_key_path
