@@ -5,63 +5,8 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/nlopes/slack"
 )
-
-// Variables to share between sessions
-var (
-	legacyClient *slack.Client
-	client       *slack.Client
-	sess         *session.Session
-)
-
-func init() {
-	sess, _ = session.NewSessionWithOptions(session.Options{
-		Config:            aws.Config{Region: aws.String("us-east-1")},
-		SharedConfigState: session.SharedConfigEnable,
-	})
-	config := config{
-		slackApiKeyName:      "/ukrops/emojiBot/slackAPI",
-		slackApiKeyLeacyName: "/ukrops/emojiBot/slackAPILegacy",
-	}
-	err := config.GetSecrets()
-	if err != nil {
-		panic(err)
-	}
-	client = slack.New(config.slackApiKey)
-	legacyClient = slack.New(config.slackApiKeyLeacy)
-}
-
-type config struct {
-	slackApiKey          string
-	slackApiKeyName      string
-	slackApiKeyLeacy     string
-	slackApiKeyLeacyName string
-}
-
-func (c *config) GetSecrets() error {
-	ps := ssm.New(sess)
-	output, err := ps.GetParameter(&ssm.GetParameterInput{
-		Name:           aws.String(c.slackApiKeyName),
-		WithDecryption: aws.Bool(true),
-	})
-	if err != nil {
-		return err
-	}
-	c.slackApiKey = *output.Parameter.Value
-	output, err = ps.GetParameter(&ssm.GetParameterInput{
-		Name:           aws.String(c.slackApiKeyLeacyName),
-		WithDecryption: aws.Bool(true),
-	})
-	if err != nil {
-		return err
-	}
-	c.slackApiKeyLeacy = *output.Parameter.Value
-	return nil
-}
 
 func main() {
 	lambda.Start(HandleEventTest)

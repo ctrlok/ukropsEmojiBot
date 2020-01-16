@@ -22,7 +22,7 @@ resource "aws_route53_record" "emojibot" {
 }
 
 resource "aws_acm_certificate" "emojiBot" {
-  domain_name       = "emojibot.aws.ctrlok.dev"
+  domain_name       = local.current.dns_name
   validation_method = "DNS"
 }
 

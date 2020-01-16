@@ -3,5 +3,5 @@ resource "aws_kms_key" "emojiBot_slackApi" {
 }
 
 output "kms" {
-  value = aws_kms_key.emojiBot_slackApi
+  value = aws_kms_key.emojiBot_slackApi.arn
 }

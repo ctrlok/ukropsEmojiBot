@@ -1,3 +1,5 @@
 /slackConnector/slackConnectorBin
 /slackConnector.zip
 .terraform/
+.DS_Store
+.idea

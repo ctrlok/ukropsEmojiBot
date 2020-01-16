@@ -1,5 +1,5 @@
 resource "aws_iam_role" "slackConnector" {
-  name = "ukrops_emojiBot_slackConnector" // TODO: rename to workspace related
+  name = "ukrops_emojiBot_slackConnector-${terraform.workspace}"
 
   assume_role_policy = <<EOF
 {
@@ -23,7 +23,7 @@ EOF
 
 # Allow lambda to write logs
 resource "aws_iam_role_policy" "slackConnectorLogs" {
-  name = "slackConnector_cloudwatch_access" // TODO: rename to workspace related
+  name = "slackConnector_cloudwatch_access-${terraform.workspace}"
   role = aws_iam_role.slackConnector.id
 
   policy = <<EOF
@@ -45,7 +45,7 @@ EOF
 }
 
 resource "aws_iam_role_policy" "slackConnectorSecrets" {
-  name = "slackConnector_secrets_access" // TODO: rename to workspace related
+  name = "slackConnector_secrets_access-${terraform.workspace}"
   role = aws_iam_role.slackConnector.id
 
   policy = <<EOF
