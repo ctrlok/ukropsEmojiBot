@@ -1,10 +1,11 @@
 // Install dependencies and copy function to the folder with dependencies
 resource "null_resource" "build_slackConnector" {
   triggers = {
-    scriptsha = filebase64sha256("slackConnector/main.go")
+    scriptsha     = filebase64sha256("slackConnector/main.go")
+    scriptshaInit = filebase64sha256("slackConnector/init.go")
   }
   provisioner "local-exec" {
-    command = "cd slackConnector; GOOS=linux GOARCH=amd64 go build -o slackConnectorBin main.go"
+    command = "cd slackConnector; GOOS=linux GOARCH=amd64 go build -o slackConnectorBin ."
   }
 }
 
