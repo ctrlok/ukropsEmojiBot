@@ -67,7 +67,7 @@ func HandleEventTest(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 				bodyText := slack.NewTextBlockObject("mrkdwn", bodyString, false, false)
 				bodySection := slack.NewSectionBlock(bodyText, nil, nil)
 
-				_, _, err = client.PostMessage("C4ZBDES04",
+				_, _, err = client.PostMessage(config.BestChannelId,
 					slack.MsgOptionBlocks(headerSection),
 					slack.MsgOptionAttachments(slack.Attachment{Blocks: []slack.Block{bodySection}}))
 			}

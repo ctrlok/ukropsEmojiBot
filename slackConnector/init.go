@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/nlopes/slack"
 	"os"
 	"reflect"
@@ -11,7 +12,7 @@ import (
 	"unicode"
 )
 
-// Variables to share between sessions
+// Variables to share between Lambda runs
 var (
 	legacyClient *slack.Client
 	client       *slack.Client
@@ -19,26 +20,40 @@ var (
 	config       *initConfig
 )
 
+// We use init for parse env variables
+// and for creating slack sessions
+// shared between Lambda runs
+// Don't know how to test it without expensive integration tests :(
 func init() {
 	// Don't run init on testing
 	if len(os.Args) > 1 && os.Args[1][:5] == "-test" {
 		return
 	}
+
+	err := config.FillFromEnv()
+	if err != nil {
+		fmt.Printf("Initialization error: %s", err)
+		os.Exit(2)
+	}
+
 	sess, _ = session.NewSessionWithOptions(session.Options{
-		Config:            aws.Config{Region: aws.String("us-east-1")},
+		Config:            aws.Config{Region: aws.String(config.AwsRegion)},
 		SharedConfigState: session.SharedConfigEnable,
 	})
 
-	// config := config{
-	// 	slackApiKeyName:      "/ukrops/emojiBot/slackAPI",
-	// 	slackApiKeyLeacyName: "/ukrops/emojiBot/slackAPILegacy",
-	// }
-	// err := config.GetSecrets()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// client = slack.New(config.slackApiKey)
-	// legacyClient = slack.New(config.slackApiKeyLeacy)
+	slackApiKey, err := GetSecrets(config.SsmSlackApiKeyPath)
+	if err != nil {
+		fmt.Printf("Error getting ssm key %s: %s", config.SsmSlackApiKeyPath, err)
+		os.Exit(2)
+	}
+	client = slack.New(slackApiKey)
+
+	slackApiKeyLegacy, err := GetSecrets(config.SsmSlackApiLegacyKeyPath)
+	if err != nil {
+		fmt.Printf("Error getting ssm key %s: %s", config.SsmSlackApiLegacyKeyPath, err)
+		os.Exit(2)
+	}
+	legacyClient = slack.New(slackApiKeyLegacy)
 }
 
 type initConfig struct {
@@ -55,9 +70,9 @@ type initConfig struct {
 func (c *initConfig) FillFromEnv() error {
 	envVariablesPrefix := "EMOJIBOT_"
 	envVariablesRaw := os.Environ()
-
 	reflectConfig := reflect.ValueOf(c)
 
+	// Set initConfig fields which are mached to the env variables with EMOJIBOT_ prefix
 	for _, envVarPair := range envVariablesRaw {
 		if strings.HasPrefix(envVarPair, envVariablesPrefix) {
 			envVarName := strings.SplitN(envVarPair, "=", 2)[0]
@@ -65,11 +80,12 @@ func (c *initConfig) FillFromEnv() error {
 			cammelCaseName := envToCamelCase(trimedName)
 			field := reflectConfig.Elem().FieldByName(cammelCaseName)
 			if field.IsValid() {
-				field.SetString(os.Getenv(envVarName))
+				field.SetString(os.Getenv(envVarName)) // Set only exist fields
 			}
 		}
 	}
 
+	// Check if all fields are setted up
 	for i := 0; i < reflectConfig.Elem().NumField(); i++ {
 		if reflectConfig.Elem().Field(i).String() == "" {
 			return fmt.Errorf("error parsing %s argument", reflectConfig.Elem().Type().Field(i).Name)
@@ -97,23 +113,15 @@ func envToCamelCase(incomingString string) string {
 	return strings.Map(mapFunc, incomingString)
 }
 
-// func (c *config) GetSecrets() error {
-// 	ps := ssm.New(sess)
-// 	output, err := ps.GetParameter(&ssm.GetParameterInput{
-// 		Name:           aws.String(c.slackApiKeyName),
-// 		WithDecryption: aws.Bool(true),
-// 	})
-// 	if err != nil {
-// 		return err
-// 	}
-// 	c.slackApiKey = *output.Parameter.Value
-// 	output, err = ps.GetParameter(&ssm.GetParameterInput{
-// 		Name:           aws.String(c.slackApiKeyLeacyName),
-// 		WithDecryption: aws.Bool(true),
-// 	})
-// 	if err != nil {
-// 		return err
-// 	}
-// 	c.slackApiKeyLeacy = *output.Parameter.Value
-// 	return nil
-// }
+// GetSecrets is a function for getting secrets from AWS SSM based on provided path
+func GetSecrets(secretPath string) (string, error) {
+	ps := ssm.New(sess)
+	output, err := ps.GetParameter(&ssm.GetParameterInput{
+		Name:           aws.String(secretPath),
+		WithDecryption: aws.Bool(true),
+	})
+	if err != nil {
+		return "", err
+	}
+	return *output.Parameter.Value, nil
+}
