@@ -14,5 +14,14 @@ Content-Type: application/json
 
 "message"
 
-###
+### Challenge request develop test
+POST https://emojibot-development.aws.ctrlok.dev/v1/slack
+Content-Type: application/json
 
+{
+  "token": "token",
+  "challenge": "challenge",
+  "type": "url_verification"
+}
+
+###

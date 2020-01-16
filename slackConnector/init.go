@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/nlopes/slack"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"reflect"
 	"strings"
@@ -30,10 +31,16 @@ func init() {
 		return
 	}
 
+	if os.Getenv("DEBUG") != "" {
+		log.SetLevel(log.DebugLevel)
+		log.SetReportCaller(true)
+	}
+
+	log.Debug("Start config initialization")
+	config = &initConfig{}
 	err := config.FillFromEnv()
 	if err != nil {
-		fmt.Printf("Initialization error: %s", err)
-		os.Exit(2)
+		log.Fatalf("Initialization error: %s", err)
 	}
 
 	sess, _ = session.NewSessionWithOptions(session.Options{
@@ -43,15 +50,13 @@ func init() {
 
 	slackApiKey, err := GetSecrets(config.SsmSlackApiKeyPath)
 	if err != nil {
-		fmt.Printf("Error getting ssm key %s: %s", config.SsmSlackApiKeyPath, err)
-		os.Exit(2)
+		log.Fatalf("Error getting ssm key %s: %s", config.SsmSlackApiKeyPath, err)
 	}
 	client = slack.New(slackApiKey)
 
 	slackApiKeyLegacy, err := GetSecrets(config.SsmSlackApiLegacyKeyPath)
 	if err != nil {
-		fmt.Printf("Error getting ssm key %s: %s", config.SsmSlackApiLegacyKeyPath, err)
-		os.Exit(2)
+		log.Fatalf("Error getting ssm key %s: %s", config.SsmSlackApiLegacyKeyPath, err)
 	}
 	legacyClient = slack.New(slackApiKeyLegacy)
 }
@@ -69,6 +74,7 @@ type initConfig struct {
 // Probably can use some package for this
 // But while it's a my own package, can do it myself for fun
 func (c *initConfig) FillFromEnv() error {
+	log.Debug("Start processing env variables")
 	envVariablesPrefix := "EMOJIBOT_"
 	envVariablesRaw := os.Environ()
 	reflectConfig := reflect.ValueOf(c)

@@ -17,6 +17,8 @@ resource "aws_lambda_function" "slackConnector" {
       EMOJIBOT_SSM_SLACK_API_KEY_PATH        = local.ssm.slack_api_key_path
       EMOJIBOT_SSM_SLACK_API_LEGACY_KEY_PATH = local.ssm.legacy_slack_api_key_path
       EMOJIBOT_AWS_REGION                    = data.aws_region.current.name
+      EMOJIBOT_BEST_EMOJI_NAME               = local.current.best_emoji_name
+      DEBUG                                  = local.current.debug
     }
   }
 }
