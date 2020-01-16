@@ -61,6 +61,7 @@ type initConfig struct {
 	SsmSlackApiKeyPath       string
 	SsmSlackApiLegacyKeyPath string
 	BestChannelId            string
+	BestEmojiName            string
 }
 
 // FillFromEnv will check env variables with "EMOJIBOT_" prefix

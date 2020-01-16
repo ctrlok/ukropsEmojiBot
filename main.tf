@@ -22,11 +22,14 @@ locals {
   current = local.workspace[terraform.workspace]
   workspace = {
     production = {
-      dns_name = "emojibot.aws.ctrlok.dev"
+      dns_name        = "emojibot.aws.ctrlok.dev"
+      best_emoji_name = "to_best"
+      best_channel_id = "C4ZBDES04"
     }
     development = {
       dns_name        = "emojibot-development.aws.ctrlok.dev"
-      best_channel_id = ""
+      best_emoji_name = "japanese_goblin"
+      best_channel_id = "CS9R5CUQG"
     }
   }
 }

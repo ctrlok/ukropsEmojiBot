@@ -21,6 +21,7 @@ func Test_initConfig_FillFromEnv(t *testing.T) {
 	os.Setenv("EMOJIBOT_BEST_CHANNEL_ID", "CHANID")
 	os.Setenv("EMOJIBOT_SSM_SLACK_API_KEY_PATH", "APIPATH1")
 	os.Setenv("EMOJIBOT_SSM_SLACK_API_LEGACY_KEY_PATH", "L_APIPATH")
+	os.Setenv("EMOJIBOT_BEST_EMOJI_NAME", "to_best")
 	c = &initConfig{}
 	err = c.FillFromEnv()
 	assert.NoError(t, err)
@@ -28,6 +29,7 @@ func Test_initConfig_FillFromEnv(t *testing.T) {
 	assert.Equal(t, "CHANID", c.BestChannelId)
 	assert.Equal(t, "APIPATH1", c.SsmSlackApiKeyPath)
 	assert.Equal(t, "L_APIPATH", c.SsmSlackApiLegacyKeyPath)
+	assert.Equal(t, "to_best", c.BestEmojiName)
 
 	// Test panic
 	c = &initConfig{}

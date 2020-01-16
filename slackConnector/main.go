@@ -41,7 +41,7 @@ func HandleEventTest(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		}
 
 		for _, reaction := range reactions {
-			if reaction.Name == "to_best" && reaction.Count == 1 {
+			if reaction.Name == config.BestEmojiName && reaction.Count == 1 {
 				permalink, _ := client.GetPermalink(&slack.PermalinkParameters{
 					Channel: lambdaEvent.Event.Item.Channel,
 					Ts:      lambdaEvent.Event.Item.Timestamp,
