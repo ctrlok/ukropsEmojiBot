@@ -4,7 +4,8 @@ based on reactions in slack. Created for [ukrops](https://ukrops.club)
 community. See `Contribution` if you want to use it for your community. 
 
 # Features
-TODO
+- when user react to the message with :to_best: reaction - send this message 
+to the special channel.
 
 # Deploy
 ```bash
