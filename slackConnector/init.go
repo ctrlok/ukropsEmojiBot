@@ -15,10 +15,11 @@ import (
 
 // Variables to share between Lambda runs
 var (
-	legacyClient *slack.Client
-	client       *slack.Client
-	sess         *session.Session
-	config       *initConfig
+	legacyClient       *slack.Client
+	client             *slack.Client
+	sess               *session.Session
+	config             *initConfig
+	ssmSlackSignSecret string
 )
 
 // We use init for parse env variables
@@ -59,12 +60,18 @@ func init() {
 		log.Fatalf("Error getting ssm key %s: %s", config.SsmSlackApiLegacyKeyPath, err)
 	}
 	legacyClient = slack.New(slackApiKeyLegacy)
+
+	ssmSlackSignSecret, err = GetSecrets(config.SsmSlackSignSecretPath)
+	if err != nil {
+		log.Fatalf("Error getting ssm key %s: %s", config.SsmSlackSignSecretPath, err)
+	}
 }
 
 type initConfig struct {
 	AwsRegion                string
 	SsmSlackApiKeyPath       string
 	SsmSlackApiLegacyKeyPath string
+	SsmSlackSignSecretPath   string
 	BestChannelId            string
 	BestEmojiName            string
 }

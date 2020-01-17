@@ -16,8 +16,9 @@ data "aws_caller_identity" "current" {}
 
 locals {
   ssm = {
-    slack_api_key_path        = "/ukrops/emojiBot/${terraform.workspace}/slackAPIkey"
-    legacy_slack_api_key_path = "/ukrops/emojiBot/${terraform.workspace}/LegacySlackAPIkey"
+    slack_api_key_path            = "/ukrops/emojiBot/${terraform.workspace}/slackAPIkey"
+    legacy_slack_api_key_path     = "/ukrops/emojiBot/${terraform.workspace}/LegacySlackAPIkey"
+    legacy_slack_sign_secret_path = "/ukrops/emojiBot/${terraform.workspace}/slackSignSecret"
   }
   current = local.workspace[terraform.workspace]
   workspace = {

@@ -36,40 +36,31 @@ var challengeBody = `
   "type": "url_verification"
 }`
 
-func TestHandleEvent(t *testing.T) {
-	request := events.APIGatewayProxyRequest{Body:challengeBody}
-	response, err := HandleEvent(request)
-	assert.NoError(t, err)
-	assert.Equal(t, "challenge", response.Body)
-}
-
 func TestParseEvent(t *testing.T) {
 	config = &initConfig{}
-	request := events.APIGatewayProxyRequest{Body:challengeBody}
+	request := events.APIGatewayProxyRequest{Body: challengeBody}
 	event, err := ParseEvent(request)
 	assert.NoError(t, err)
 	assert.IsType(t, &ChallengeEvent{}, event)
 	assert.Equal(t, "challenge", event.(*ChallengeEvent).Challenge)
 
-	_, err = ParseEvent(events.APIGatewayProxyRequest{Body:""})
+	_, err = ParseEvent(events.APIGatewayProxyRequest{Body: ""})
 	assert.Error(t, err)
 
-	_, err = ParseEvent(events.APIGatewayProxyRequest{Body:`{"token": "token","type": "not_existed_type"}`})
+	_, err = ParseEvent(events.APIGatewayProxyRequest{Body: `{"token": "token","type": "not_existed_type"}`})
 	assert.Error(t, err)
 
-	request = events.APIGatewayProxyRequest{Body:reactionAddedBody}
+	request = events.APIGatewayProxyRequest{Body: reactionAddedBody}
 	config.BestEmojiName = "to_best"
 	event, err = ParseEvent(request)
 	assert.NoError(t, err)
 	assert.IsType(t, ReactionEvent{}, event)
 	assert.Equal(t, "sweat_smile", event.(ReactionEvent).Event.Reaction)
 
-	request = events.APIGatewayProxyRequest{Body:reactionAddedBody}
+	request = events.APIGatewayProxyRequest{Body: reactionAddedBody}
 	config.BestEmojiName = "sweat_smile"
 	event, err = ParseEvent(request)
 	assert.NoError(t, err)
 	assert.IsType(t, ToBestEvent{}, event)
 	assert.Equal(t, "sweat_smile", event.(ToBestEvent).Event.Reaction)
 }
-
-

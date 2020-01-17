@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
+	"net/http"
 )
 
 func main() {
@@ -13,6 +15,12 @@ func main() {
 }
 
 func HandleEvent(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	err := VerifySecret(request)
+	if err != nil {
+		log.WithFields(log.Fields{"headers": request.Headers}).Error("Unable to verify slack request")
+		return events.APIGatewayProxyResponse{StatusCode: 500}, err
+	}
+
 	log.WithFields(log.Fields{"body": request.Body}).Debug("Start processing a body")
 	event, err := ParseEvent(request)
 	if err != nil {
@@ -22,6 +30,20 @@ func HandleEvent(request events.APIGatewayProxyRequest) (events.APIGatewayProxyR
 	log.WithFields(log.Fields{"event": event}).Debug("Finish processing a body. Let's start event processing")
 	// TODO: add token verification
 	return event.Process()
+}
+
+func VerifySecret(request events.APIGatewayProxyRequest) error {
+	log.WithFields(log.Fields{"headers": request.Headers}).Debug("Start request verification.")
+	header := http.Header{}
+	for k, v := range request.Headers {
+		header.Add(k, v)
+	}
+	sv, err := slack.NewSecretsVerifier(header, ssmSlackSignSecret)
+	if err != nil {
+		return err
+	}
+	_, _ = sv.Write([]byte(request.Body))
+	return sv.Ensure()
 }
 
 func ParseEvent(request events.APIGatewayProxyRequest) (Event, error) {
@@ -58,15 +80,9 @@ func ParseEvent(request events.APIGatewayProxyRequest) (Event, error) {
 }
 
 type BasicEvent struct {
-	Token string `json:"token"`
-	Type  string `json:"type"`
-}
-
-func (e BasicEvent) VerifyToken(expectedToken string) bool {
-	return expectedToken == e.Token
+	Type string `json:"type"`
 }
 
 type Event interface {
-	VerifyToken(string) bool
 	Process() (events.APIGatewayProxyResponse, error)
 }
